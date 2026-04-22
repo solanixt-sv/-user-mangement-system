@@ -131,18 +131,28 @@ footer { visibility: hidden !important; }
 """, unsafe_allow_html=True)
 
 # --- Logic ---
-def api_request(method, endpoint, data=None):
+def api_request(method, endpoint, data=None, params=None):
     url = f"{API_BASE_URL}{endpoint}"
     try:
-        if method == "GET": r = requests.get(url, timeout=5)
+        if method == "GET": r = requests.get(url, params=params, timeout=5)
         elif method == "POST": r = requests.post(url, json=data, timeout=5)
         elif method == "DELETE": r = requests.delete(url, timeout=5)
-        if r.status_code in [200, 201]: return r.json()
-    except: pass
+        
+        if r.status_code in [200, 201]: 
+            return r.json()
+        elif r.status_code == 400:
+            st.toast(f"Error: {r.json().get('detail')}", icon="❌")
+    except Exception as e: 
+        st.toast(f"Network Error: {str(e)}", icon="⚠️")
     return None
 
+# Initialize Session States
 if 'selected_user' not in st.session_state:
     st.session_state.selected_user = None
+if 'user_offset' not in st.session_state:
+    st.session_state.user_offset = 0
+if 'analysis_offset' not in st.session_state:
+    st.session_state.analysis_offset = 0
 
 # --- TOP NAV ---
 is_online = is_port_in_use(8000)
@@ -182,7 +192,21 @@ col_dir, col_dash = st.columns([1, 2], gap="large")
 # 🏛️ Employee Directory
 with col_dir:
     st.markdown("<h5 style='color:var(--text-muted); margin-bottom: 15px'>DIRECTORY LISTING</h5>", unsafe_allow_html=True)
-    users = api_request("GET", "/users")
+    
+    # Directory Controls
+    with st.container():
+        dc1, dc2 = st.columns([1, 1])
+        with dc1:
+            u_sort = st.selectbox("Order", ["asc", "desc"], label_visibility="collapsed", key="u_sort_sel")
+        with dc2:
+            page_num = (st.session_state.user_offset // 10) + 1
+            st.markdown(f"<div style='text-align:right; font-size:12px; font-weight:700; color:var(--primary); padding-top:10px'>PAGE {page_num}</div>", unsafe_allow_html=True)
+
+    users = api_request("GET", "/users", params={
+        "limit": 10, 
+        "offset": st.session_state.user_offset, 
+        "sort": u_sort
+    })
     if users:
         for u in users:
             is_sel = st.session_state.selected_user and st.session_state.selected_user['id'] == u['id']
@@ -209,8 +233,23 @@ with col_dir:
                     api_request("DELETE", f"/users/{u['id']}")
                     if is_sel: st.session_state.selected_user = None
                     st.rerun()
+        
+        # Pagination Buttons
+        pb1, pb2 = st.columns(2)
+        with pb1:
+            if st.button("⬅️ Previous", disabled=st.session_state.user_offset == 0, use_container_width=True):
+                st.session_state.user_offset = max(0, st.session_state.user_offset - 10)
+                st.rerun()
+        with pb2:
+            if st.button("Next ➡️", disabled=not users or len(users) < 10, use_container_width=True):
+                st.session_state.user_offset += 10
+                st.rerun()
     else:
         st.markdown("<div class='saas-card' style='text-align:center; padding: 40px; color:var(--text-muted)'>No users found</div>", unsafe_allow_html=True)
+        if st.session_state.user_offset > 0:
+            if st.button("🔄 Reset Pagination"):
+                st.session_state.user_offset = 0
+                st.rerun()
 
 # 📊 Intelligence Dashboard
 with col_dash:
@@ -220,9 +259,27 @@ with col_dash:
         
         # Stats Hub
         st.markdown("<div class='saas-card' style='padding: 15px'>", unsafe_allow_html=True)
-        analyses = api_request("GET", f"/users/{sel['id']}/analyses")
+        
+        # Analytics Controls (Filtering & Sorting)
+        ac1, ac2, ac3 = st.columns([2, 1, 1])
+        with ac1:
+            min_w = st.slider("Min Words", 0, 50, 0, help="Filter results by minimum word count")
+        with ac2:
+            a_sort = st.selectbox("Sort", ["asc", "desc"], index=1, key="a_sort_sel")
+        with ac3:
+            if st.button("🔄", help="Reset Filters"):
+                st.session_state.analysis_offset = 0
+                st.rerun()
+
+        analyses = api_request("GET", f"/users/{sel['id']}/analyses", params={
+            "limit": 5,
+            "offset": st.session_state.analysis_offset,
+            "sort": a_sort,
+            "min_words": min_w
+        })
+
         m1, m2, m3 = st.columns(3)
-        with m1: st.markdown(f"<div class='metric-box'><div class='m-val'>{len(analyses) if analyses else 0}</div><div class='m-label'>Total Analyses</div></div>", unsafe_allow_html=True)
+        with m1: st.markdown(f"<div class='metric-box'><div class='m-val'>{len(analyses) if analyses else 0}</div><div class='m-label'>Visible Records</div></div>", unsafe_allow_html=True)
         with m2: st.markdown(f"<div class='metric-box'><div class='m-val' style='color:#059669'>ACTIVE</div><div class='m-label'>Node Status</div></div>", unsafe_allow_html=True)
         with m3: st.markdown(f"<div class='metric-box'><div class='m-val' style='font-family:monospace; font-size:24px'>{sel['id'][:6].upper()}</div><div class='m-label'>Access Key</div></div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -230,24 +287,35 @@ with col_dash:
         # Algorithm Input
         st.markdown("<div class='saas-card'>", unsafe_allow_html=True)
         st.markdown("<h4 style='margin-top:0'>New Intelligence Feed</h4>", unsafe_allow_html=True)
-        t_input = st.text_area("", placeholder="Enter text narrative for real-time analysis...", height=100, label_visibility="collapsed")
+        t_input = st.text_area("", placeholder="Enter text narrative for real-time analysis...", height=80, label_visibility="collapsed")
         if st.button("Process Analytics", use_container_width=True):
             if t_input.strip():
                 if api_request("POST", f"/users/{sel['id']}/analyze", {"text": t_input}):
-                    st.toast("Success")
+                    st.toast("Success", icon="✅")
                     st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
         # Operational Logs
         if analyses:
             st.markdown("<h5 style='color:var(--text-muted); margin: 30px 0 15px'>HISTORICAL RECORDS</h5>", unsafe_allow_html=True)
-            for a in reversed(analyses):
+            for a in analyses:
                 with st.expander(f"Record: {a['analysis_id'][:8].upper()} — {a['analyzed_at'][:16].replace('T', ' ')}"):
                     mc1, mc2, mc3 = st.columns(3)
                     mc1.metric("Words", a['word_count'])
                     mc2.metric("Captials", a['uppercase_count'])
                     mc3.metric("Specials", a['special_character_count'])
                     st.markdown(f"<div class='intel-log'>{a['text']}</div>", unsafe_allow_html=True)
+            
+            # Analysis Pagination
+            ap1, ap2 = st.columns(2)
+            with ap1:
+                if st.button("⬅️ Earlier", key="a_prev", disabled=st.session_state.analysis_offset == 0, use_container_width=True):
+                    st.session_state.analysis_offset = max(0, st.session_state.analysis_offset - 5)
+                    st.rerun()
+            with ap2:
+                if st.button("Later ➡️", key="a_next", disabled=not analyses or len(analyses) < 5, use_container_width=True):
+                    st.session_state.analysis_offset += 5
+                    st.rerun()
     else:
         st.markdown("""
         <div class="saas-card" style="text-align:center; padding: 100px 20px;">
