@@ -23,17 +23,37 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Clean Professional Look
+# Professional Business Design
 st.markdown("""
 <style>
-.stApp { background-color: #ffffff; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.stApp { background-color: #fcfcfd; font-family: 'Inter', sans-serif; }
 .main { color: #1e293b; }
-.section-card {
-    background-color: #f8fafc;
+
+/* Professional Cards */
+.profile-card {
+    background: white;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 20px;
     margin-bottom: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* User Selection Highlight */
+.selected-user {
+    border-left: 5px solid #2563eb !important;
+    background-color: #f1f5f9;
+}
+
+/* Custom Metric Style */
+.metric-box {
+    text-align: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -102,12 +122,14 @@ if not st.session_state.access_token:
         lp = st.text_input("Password", type="password", placeholder="••••••••")
         if st.button("Sign In", use_container_width=True):
             if le and lp:
-                res = client.post("/token", data={"username": le, "password": lp})
-                if res.status_code == 200:
-                    st.session_state.access_token = res.json()["access_token"]
-                    st.rerun()
-                else:
-                    st.error("Invalid email or password")
+                with st.spinner("Authenticating..."):
+                    res = client.post("/token", data={"username": le, "password": lp})
+                    if res.status_code == 200:
+                        st.session_state.access_token = res.json()["access_token"]
+                        st.toast("Welcome back!", icon="👋")
+                        st.rerun()
+                    else:
+                        st.error("Invalid email or password")
         
     with auth_tab2:
         st.subheader("Sign Up")
@@ -151,13 +173,13 @@ with col_dir:
         "offset": st.session_state.user_offset, 
         "sort": u_sort
     })
-    if users:
         for u in users:
             is_sel = st.session_state.selected_user and st.session_state.selected_user['id'] == u['id']
+            sel_class = "selected-user" if is_sel else ""
             st.markdown(f"""
-            <div class="section-card">
-                <div style="font-weight:600; font-size:1.1rem;">{u['name']}</div>
-                <div style="font-size:0.9rem; color:#64748b; margin-bottom:12px;">{u['email']}</div>
+            <div class="profile-card {sel_class}">
+                <div style="font-weight:700; font-size:1.1rem; color:#0f172a;">{u['name']}</div>
+                <div style="font-size:0.85rem; color:#64748b; margin-bottom:12px;">{u['email']}</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -216,9 +238,15 @@ with col_dash:
         })
 
         m1, m2, m3 = st.columns(3)
-        m1.metric("Analyses", len(analyses) if analyses else 0)
-        m2.metric("Status", "Active")
-        m3.metric("User ID", sel['id'][:5])
+        with m1:
+            st.markdown("<div class='metric-box'><div style='font-size:0.8rem; color:#64748b;'>TOTAL ANALYSES</div>"
+                        f"<div style='font-size:1.8rem; font-weight:700;'>{len(analyses) if analyses else 0}</div></div>", unsafe_allow_html=True)
+        with m2:
+            st.markdown("<div class='metric-box'><div style='font-size:0.8rem; color:#64748b;'>USER STATUS</div>"
+                        "<div style='font-size:1.8rem; font-weight:700; color:#10b981;'>ACTIVE</div></div>", unsafe_allow_html=True)
+        with m3:
+            st.markdown("<div class='metric-box'><div style='font-size:0.8rem; color:#64748b;'>ID CODE</div>"
+                        f"<div style='font-size:1.8rem; font-weight:700; color:#2563eb;'>{sel['id'][:5].upper()}</div></div>", unsafe_allow_html=True)
 
         # Input Area
         st.subheader("New Text Analysis")
@@ -234,11 +262,16 @@ with col_dash:
             st.markdown("<h5 style='color:var(--text-muted); margin: 30px 0 15px'>HISTORICAL RECORDS</h5>", unsafe_allow_html=True)
             for a in analyses:
                 with st.expander(f"Record: {a['analysis_id'][:8].upper()} — {a['analyzed_at'][:16].replace('T', ' ')}"):
-                    mc1, mc2, mc3 = st.columns(3)
-                    mc1.metric("Words", a['word_count'])
-                    mc2.metric("Captials", a['uppercase_count'])
-                    mc3.metric("Specials", a['special_character_count'])
-                    st.code(a['text'])
+                    st.markdown(f"""
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:12px; font-weight:600; color:#2563eb;">Words: {a['word_count']}</span>
+                            <span style="font-size:12px; font-weight:600; color:#059669;">Capitals: {a['uppercase_count']}</span>
+                            <span style="font-size:12px; font-weight:600; color:#dc2626;">Specials: {a['special_character_count']}</span>
+                        </div>
+                        <div style="font-family:monospace; background:white; padding:10px; border-radius:4px; border:1px solid #cbd5e1; font-size:13px;">{a['text']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
             
             # Analysis Pagination
             ap1, ap2 = st.columns(2)
