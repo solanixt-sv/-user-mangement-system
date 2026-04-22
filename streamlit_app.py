@@ -4,6 +4,8 @@ import subprocess
 import time
 import socket
 import os
+import threading
+import uvicorn
 from datetime import datetime
 
 # --- Configuration ---
@@ -13,11 +15,19 @@ def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
 
-# --- Auto-start Backend ---
-if not is_port_in_use(8000):
-    if os.path.exists("main.py"):
-        subprocess.Popen(["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"])
-        time.sleep(2)
+# --- Background Backend Runner ---
+def run_backend():
+    # Only start if not already running
+    if not is_port_in_use(8000):
+        from main import app as fastapi_app
+        uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
+
+# Start backend in a separate thread
+if "backend_started" not in st.session_state:
+    thread = threading.Thread(target=run_backend, daemon=True)
+    thread.start()
+    st.session_state.backend_started = True
+    time.sleep(2) # Allow time for uvicorn to bind to port
 
 # --- UI Setup ---
 st.set_page_config(
