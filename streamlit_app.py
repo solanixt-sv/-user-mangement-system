@@ -173,6 +173,7 @@ with col_dir:
         "offset": st.session_state.user_offset, 
         "sort": u_sort
     })
+    if users:
         for u in users:
             is_sel = st.session_state.selected_user and st.session_state.selected_user['id'] == u['id']
             sel_class = "selected-user" if is_sel else ""
