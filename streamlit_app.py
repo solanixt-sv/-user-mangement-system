@@ -17,146 +17,126 @@ def is_port_in_use(port):
 
 # --- Background Backend Runner ---
 def run_backend():
-    # Only start if not already running
     if not is_port_in_use(8000):
         from main import app as fastapi_app
-        uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
+        uvicorn.run(fastapi_app, host="0.0.0.0", port=8000, log_level="error")
 
-# Start backend in a separate thread
 if "backend_started" not in st.session_state:
     thread = threading.Thread(target=run_backend, daemon=True)
     thread.start()
     st.session_state.backend_started = True
-    time.sleep(2) # Allow time for uvicorn to bind to port
+    time.sleep(2)
 
 # --- UI Setup ---
 st.set_page_config(
-    page_title="UserScope Enterprise | Management & Analytics",
-    page_icon="💠",
+    page_title="UserScope Dark | Intelligence Platform",
+    page_icon="🌌",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Professional Enterprise CSS
+# Premium Midnight Dark Theme CSS
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700&display=swap');
 
 :root {
-    --primary: #4f46e5;
-    --primary-glow: rgba(79, 70, 229, 0.15);
-    --secondary: #6366f1;
-    --bg: #fdfdff;
-    --sidebar: #0f172a;
-    --dark-text: #111827;
-    --muted-text: #4b5563;
-    --border: #e5e7eb;
+    --primary: #818cf8;
+    --primary-glow: rgba(129, 140, 248, 0.2);
+    --bg-dark: #0f172a;
+    --card-dark: #1e293b;
+    --border-dark: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
 }
 
-/* Global resets */
-.main {
-    background-color: var(--bg);
-    color: var(--dark-text);
+/* Base Styles */
+.stApp {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
 }
 
 * { font-family: 'Inter', sans-serif; }
+h1, h2, h3, h4 { color: var(--text-primary); font-family: 'Outfit', sans-serif; }
 
-h1, h2, h3 {
-    font-family: 'Outfit', sans-serif;
-    letter-spacing: -0.02em;
-}
-
-/* Sidebar */
-[data-testid="stSidebar"] {
-    background-color: var(--sidebar) !important;
-    border-right: 1px solid var(--border);
-}
-[data-testid="stSidebar"] * { color: #f8fafc !important; }
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 10px; }
 
 /* Dashboard Cards */
 .card {
-    background: white;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     margin-bottom: 1.25rem;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-    border-color: #d1d5db;
-}
-
-/* Status Indicators */
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 12px;
-    border-radius: 9999px;
-    font-size: 12px;
-    font-weight: 600;
-    background: #ecfdf5;
-    color: #059669;
-}
-.status-pill.offline {
-    background: #fef2f2;
-    color: #dc2626;
-}
-.pulse {
-    width: 6px;
-    height: 6px;
-    background: currentColor;
-    border-radius: 50%;
-    margin-right: 8px;
-    animation: blink 2s infinite;
-}
-@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-/* Professional Buttons */
-.stButton > button {
-    background-color: white !important;
-    color: var(--dark-text) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-    padding: 0.5rem 1rem !important;
-    font-weight: 600 !important;
-    width: 100%;
-}
-.stButton > button:hover {
-    border-color: var(--primary) !important;
-    color: var(--primary) !important;
-    background-color: var(--primary-glow) !important;
+    border-color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-glow);
+    transform: translateY(-2px);
 }
 
 /* Header Banner */
 .header-banner {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    border: 1px solid var(--border-dark);
     padding: 2.5rem;
-    border-radius: 16px;
-    color: white;
+    border-radius: 20px;
     margin-bottom: 2rem;
-    box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.2);
+    text-align: center;
 }
 
-/* Analysis Items */
-.analysis-item {
-    border-left: 3px solid var(--primary);
-    background: #f9fafb;
-    padding: 1rem;
-    border-radius: 0 8px 8px 0;
-    margin-bottom: 0.75rem;
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    background-color: #020617 !important;
+    border-right: 1px solid var(--border-dark);
+}
+[data-testid="stSidebar"] * { color: var(--text-primary) !important; }
+
+/* Inputs & Forms */
+.stTextInput input, .stTextArea textarea {
+    background-color: #0f172a !important;
+    color: white !important;
+    border: 1px solid var(--border-dark) !important;
+    border-radius: 10px !important;
 }
 
-/* Better Header Handling - Hide Deploy/Menu but keep Sidebar Toggle */
-header[data-testid="stHeader"] {
-    background: transparent !important;
+/* Buttons */
+.stButton > button {
+    background-color: var(--primary) !important;
+    color: #0f172a !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease !important;
+}
+.stButton > button:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+    box-shadow: 0 0 15px var(--primary-glow);
 }
 
-[data-testid="stHeader"] .stDeployButton,
-[data-testid="stHeader"] #MainMenu {
-    display: none !important;
+/* Status Pill */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 99px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
 }
+.dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+/* Fix Sidebar Toggle visibility in dark mode */
+header[data-testid="stHeader"] { background: transparent !important; }
+[data-testid="stHeader"] svg { fill: var(--text-primary) !important; }
 
 footer { visibility: hidden; }
 </style>
@@ -170,129 +150,100 @@ def api_request(method, endpoint, data=None):
         elif method == "POST": r = requests.post(url, json=data, timeout=5)
         elif method == "DELETE": r = requests.delete(url, timeout=5)
         if r.status_code in [200, 201]: return r.json()
-        return None
-    except: return None
+    except: pass
+    return None
 
 if 'selected_user' not in st.session_state:
     st.session_state.selected_user = None
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.markdown("<h2 style='color:white; margin-bottom:0'>💠 UserScope</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#94a3b8; font-size:14px'>Enterprise Management</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='letter-spacing:-1px'>🌌 UserScope</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#64748b; font-size:13px'>Midnight Intelligence Edition</p>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
     
-    with st.expander("➕   Register New Account", expanded=False):
-        with st.form("reg_form", clear_on_submit=True):
+    with st.expander("✨ Add New Profile", expanded=True):
+        with st.form("dark_form", clear_on_submit=True):
             n = st.text_input("Full Name")
             e = st.text_input("Email")
-            if st.form_submit_button("Add User to Database", use_container_width=True):
+            if st.form_submit_button("Register Account", use_container_width=True):
                 if n and e:
                     if api_request("POST", "/users", {"name": n, "email": e}):
-                        st.success("User Synchronized")
+                        st.success("Synchronized")
                         st.rerun()
 
     st.markdown("---")
     is_online = is_port_in_use(8000)
-    status_cls = "" if is_online else "offline"
-    st.markdown(f"""
-    <div style='padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px'>
-        <div class="status-pill {status_cls}">
-            <div class="pulse"></div> {'System Operational' if is_online else 'Connection Lost'}
-        </div>
-        <p style='font-size: 11px; margin-top: 8px; color: #64748b'>v1.2.0 Stable Build</p>
-    </div>
-    """, unsafe_allow_html=True)
+    if is_online:
+        st.markdown('<div class="status-pill"><div class="dot"></div> Engine Live</div>', unsafe_allow_html=True)
+    else:
+        st.error("Engine Offline")
 
-# --- MAIN PAGE ---
+# --- MAIN DASHBOARD ---
 st.markdown("""
 <div class="header-banner">
-    <h1 style='color:white; margin:0'>Management Console</h1>
-    <p style='color: rgba(255,255,255,0.8); margin-top: 8px'>Enterprise-grade user tracking and real-time intelligence analysis.</p>
+    <h1 style='color:white; margin:0; font-size: 2.5rem'>Intelligence Control</h1>
+    <p style='color: var(--text-secondary); margin-top: 10px'>Sophisticated user analytics and narrative ingestion.</p>
 </div>
 """, unsafe_allow_html=True)
 
 l, r = st.columns([1, 2], gap="large")
 
 with l:
-    st.markdown("### 📋 Active Directory")
+    st.markdown("### 💠 Identities")
     users = api_request("GET", "/users")
     if users:
         for u in users:
             is_sel = st.session_state.selected_user and st.session_state.selected_user['id'] == u['id']
-            card_style = "border-left: 4px solid #4f46e5; background: #f5f3ff;" if is_sel else ""
+            card_border = "border: 1.5px solid var(--primary);" if is_sel else ""
             st.markdown(f"""
-            <div class="card" style="{card_style}">
-                <div style='display:flex; justify-content:space-between; align-items:start'>
-                    <div>
-                        <h4 style='margin:0'>{u['name']}</h4>
-                        <p style='color:#6b7280; font-size:13px; margin:0'>{u['email']}</p>
-                    </div>
-                </div>
+            <div class="card" style="{card_border} padding: 1rem">
+                <h4 style='margin:0'>{u['name']}</h4>
+                <p style='color:var(--text-secondary); font-size:12px; margin:0'>{u['email']}</p>
             </div>
             """, unsafe_allow_html=True)
             
             c1, c2 = st.columns([2, 1])
             with c1:
-                if st.button("Access Dashboard", key=f"v_{u['id']}"):
+                if st.button("Initialize", key=f"v_{u['id']}", use_container_width=True):
                     st.session_state.selected_user = u
                     st.rerun()
             with c2:
-                if st.button("Delete", key=f"d_{u['id']}"):
+                if st.button("Purge", key=f"d_{u['id']}", use_container_width=True):
                     api_request("DELETE", f"/users/{u['id']}")
                     if is_sel: st.session_state.selected_user = None
                     st.rerun()
     else:
-        st.info("Directory is empty. Register a user in the sidebar.")
+        st.info("System memory is empty.")
 
 with r:
     sel = st.session_state.selected_user
     if sel:
-        st.markdown(f"### 📊 Profile: {sel['name']}")
+        st.markdown(f"### 🧪 Subject: {sel['name']}")
         
-        # Performance Metrics
         analyses = api_request("GET", f"/users/{sel['id']}/analyses")
         m1, m2 = st.columns(2)
         with m1:
-            st.markdown(f"""
-            <div class="card" style="text-align:center">
-                <p style='font-size:12px; color:#6b7280; text-transform:uppercase'>Analytic Operations</p>
-                <h2 style='margin:0'>{len(analyses) if analyses else 0}</h2>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='card' style='text-align:center'><p style='font-size:10px; color:var(--text-secondary)'>ANALYSES</p><h1 style='margin:0'>{len(analyses) if analyses else 0}</h1></div>", unsafe_allow_html=True)
         with m2:
-            st.markdown(f"""
-            <div class="card" style="text-align:center">
-                <p style='font-size:12px; color:#6b7280; text-transform:uppercase'>Profile Reference</p>
-                <h2 style='margin:0; font-family:monospace'>{sel['id'][:6].upper()}</h2>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='card' style='text-align:center'><p style='font-size:10px; color:var(--text-secondary)'>HASH</p><h1 style='margin:0; font-family:monospace; font-size:1.5rem'>{sel['id'][:8].upper()}</h1></div>", unsafe_allow_html=True)
 
-        # Intelligence Input
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        t_input = st.text_area("Intelligence Data Ingestion", placeholder="Enter narrative text for structured analysis...", height=120)
-        if st.button("Execute Quantitative Analysis", use_container_width=True):
+        t_input = st.text_area("Narrative Ingestion", placeholder="Enter raw data for processing...", height=150)
+        if st.button("Process Intelligence", use_container_width=True):
             if t_input.strip():
                 if api_request("POST", f"/users/{sel['id']}/analyze", {"text": t_input}):
-                    st.toast("Analysis Successful")
+                    st.toast("Data Processed ✨")
                     st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # History
         if analyses:
-            st.markdown("#### Operational Logs")
             for a in reversed(analyses):
-                with st.expander(f"Log: {a['analyzed_at'][:19].replace('T', ' ')}", expanded=False):
-                    c1, c2, c3 = st.columns(3)
-                    c1.metric("Words", a['word_count'])
-                    c2.metric("Capitals", a['uppercase_count'])
-                    c3.metric("Symbols", a['special_character_count'])
-                    st.markdown(f"<div class='analysis-item'>{a['text']}</div>", unsafe_allow_html=True)
+                with st.expander(f"Data Log | {a['analyzed_at'][:16].replace('T', ' ')}"):
+                    sc1, sc2, sc3 = st.columns(3)
+                    sc1.metric("Words", a['word_count'])
+                    sc2.metric("Caps", a['uppercase_count'])
+                    sc3.metric("Symbols", a['special_character_count'])
+                    st.markdown(f"<div style='background:#111827; padding:15px; border-radius:10px; border:1px solid #334155; font-family:monospace; font-size:13px'>{a['text']}</div>", unsafe_allow_html=True)
     else:
-        st.markdown("""
-        <div style='text-align:center; padding: 5rem 0; color: #9ca3af'>
-            <icon style='font-size: 3rem'>📁</icon>
-            <h3>Awaiting Selection</h3>
-            <p>Select a profile from the directory to view analytics.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; padding: 4rem; opacity: 0.4'><h2>◈ NO SELECTION</h2><p>Select a subject to retrieve intelligence logs.</p></div>", unsafe_allow_html=True)
