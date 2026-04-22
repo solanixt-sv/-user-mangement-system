@@ -269,7 +269,9 @@ with col_dash:
                         "<div style='font-size:11px; color:#64748b; font-weight:700;'>UPTIME</div>"
                         "<div style='font-size:24px; font-weight:700; color:#059669;'>100%</div></div>", unsafe_allow_html=True)
         with m3:
-                        f"<div style='font-size:1.8rem; font-weight:700; color:#2563eb;'>{sel['id'][:5].upper()}</div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='saas-card' style='text-align:center; padding:15px; background:white;'>"
+                        "<div style='font-size:11px; color:#64748b; font-weight:700;'>SECURITY</div>"
+                        "<div style='font-size:24px; font-weight:700; color:#7c3aed;'>JWT</div></div>", unsafe_allow_html=True)
 
         # Input Area
         st.subheader("New Text Analysis")
