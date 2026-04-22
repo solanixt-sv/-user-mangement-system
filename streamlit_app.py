@@ -23,38 +23,55 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Professional Business Design
+# Premium SaaS Design System
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-.stApp { background-color: #fcfcfd; font-family: 'Inter', sans-serif; }
-.main { color: #1e293b; }
+.stApp { 
+    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+    font-family: 'Inter', sans-serif;
+}
 
-/* Professional Cards */
-.profile-card {
+h1, h2, h3, .stSubheader { font-family: 'Outfit', sans-serif; color: #1e1b4b; }
+
+/* Premium Floating Cards */
+.saas-card {
     background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.saas-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-/* User Selection Highlight */
-.selected-user {
-    border-left: 5px solid #2563eb !important;
-    background-color: #f1f5f9;
+/* Sidebar Customization */
+[data-testid="stSidebar"] {
+    background-color: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
 }
 
-/* Custom Metric Style */
-.metric-box {
-    text-align: center;
-    padding: 15px;
-    background: #f8fafc;
+/* Indigo Button */
+.stButton>button {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    border: none;
     border-radius: 10px;
-    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    padding: 10px 20px;
+    transition: opacity 0.2s;
 }
+.stButton>button:hover { opacity: 0.9; color: white; }
+
+/* Status Badges */
+.badge-indigo { background: #eef2ff; color: #4338ca; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+.badge-emerald { background: #ecfdf5; color: #047857; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+.badge-rose { background: #fff1f2; color: #be123c; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -176,10 +193,10 @@ with col_dir:
     if users:
         for u in users:
             is_sel = st.session_state.selected_user and st.session_state.selected_user['id'] == u['id']
-            sel_class = "selected-user" if is_sel else ""
+            sel_style = "border-left: 4px solid #4f46e5; background: #f5f3ff;" if is_sel else ""
             st.markdown(f"""
-            <div class="profile-card {sel_class}">
-                <div style="font-weight:700; font-size:1.1rem; color:#0f172a;">{u['name']}</div>
+            <div class="saas-card" style='{sel_style}'>
+                <div style="font-weight:700; font-size:1.1rem; color:#1e1b4b;">{u['name']}</div>
                 <div style="font-size:0.85rem; color:#64748b; margin-bottom:12px;">{u['email']}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -216,9 +233,13 @@ with col_dir:
 with col_dash:
     sel = st.session_state.selected_user
     if sel:
-        st.markdown(f"### Analysis: {sel['name']}")
-        
-        st.info("Historical data and metrics are displayed below.")
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg, #4f46e5, #7c3aed); padding:24px; border-radius:16px; color:white; margin-bottom:24px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);">
+            <div style="font-size:14px; opacity:0.8; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Active Workspace</div>
+            <div style="font-size:32px; font-weight:700; margin-top:4px;">{sel['name']}</div>
+            <div style="font-size:14px; opacity:0.9; margin-top:2px;">{sel['email']} • <span style="font-weight:600">ID: {sel['id'][:5].upper()}</span></div>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Analytics Controls (Filtering & Sorting)
         ac1, ac2, ac3 = st.columns([2, 1, 1])
@@ -240,13 +261,14 @@ with col_dash:
 
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.markdown("<div class='metric-box'><div style='font-size:0.8rem; color:#64748b;'>TOTAL ANALYSES</div>"
-                        f"<div style='font-size:1.8rem; font-weight:700;'>{len(analyses) if analyses else 0}</div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='saas-card' style='text-align:center; padding:15px; background:white;'>"
+                        "<div style='font-size:11px; color:#64748b; font-weight:700;'>ANALYSES</div>"
+                        f"<div style='font-size:24px; font-weight:700; color:#4f46e5;'>{len(analyses) if analyses else 0}</div></div>", unsafe_allow_html=True)
         with m2:
-            st.markdown("<div class='metric-box'><div style='font-size:0.8rem; color:#64748b;'>USER STATUS</div>"
-                        "<div style='font-size:1.8rem; font-weight:700; color:#10b981;'>ACTIVE</div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='saas-card' style='text-align:center; padding:15px; background:white;'>"
+                        "<div style='font-size:11px; color:#64748b; font-weight:700;'>UPTIME</div>"
+                        "<div style='font-size:24px; font-weight:700; color:#059669;'>100%</div></div>", unsafe_allow_html=True)
         with m3:
-            st.markdown("<div class='metric-box'><div style='font-size:0.8rem; color:#64748b;'>ID CODE</div>"
                         f"<div style='font-size:1.8rem; font-weight:700; color:#2563eb;'>{sel['id'][:5].upper()}</div></div>", unsafe_allow_html=True)
 
         # Input Area
@@ -260,19 +282,21 @@ with col_dash:
 
         # Operational Logs
         if analyses:
-            st.markdown("<h5 style='color:var(--text-muted); margin: 30px 0 15px'>HISTORICAL RECORDS</h5>", unsafe_allow_html=True)
+            st.markdown("<h5 style='color:#64748b; margin: 30px 0 15px; font-weight:700; letter-spacing:0.5px;'>HISTORICAL INTELLIGENCE</h5>", unsafe_allow_html=True)
             for a in analyses:
-                with st.expander(f"Record: {a['analysis_id'][:8].upper()} — {a['analyzed_at'][:16].replace('T', ' ')}"):
-                    st.markdown(f"""
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:10px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <span style="font-size:12px; font-weight:600; color:#2563eb;">Words: {a['word_count']}</span>
-                            <span style="font-size:12px; font-weight:600; color:#059669;">Capitals: {a['uppercase_count']}</span>
-                            <span style="font-size:12px; font-weight:600; color:#dc2626;">Specials: {a['special_character_count']}</span>
-                        </div>
-                        <div style="font-family:monospace; background:white; padding:10px; border-radius:4px; border:1px solid #cbd5e1; font-size:13px;">{a['text']}</div>
+                st.markdown(f"""
+                <div class="saas-card" style="padding:20px; background:white;">
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                        <span class="badge-indigo">Words: {a['word_count']}</span>
+                        <span class="badge-emerald">Capitals: {a['uppercase_count']}</span>
+                        <span class="badge-rose">Specials: {a['special_character_count']}</span>
                     </div>
-                    """, unsafe_allow_html=True)
+                    <div style="background:#f1f5f9; padding:16px; border-radius:12px; font-size:14px; line-height:1.6; color:#334155; border-left:4px solid #4f46e5;">
+                        {a['text']}
+                    </div>
+                    <div style="font-size:11px; color:#94a3b8; margin-top:12px; font-weight:500;">RECORD ID: {a['analysis_id'][:8].upper()} • {a['analyzed_at'][:16].replace('T', ' ')}</div>
+                </div>
+                """, unsafe_allow_html=True)
             
             # Analysis Pagination
             ap1, ap2 = st.columns(2)
