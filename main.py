@@ -1,10 +1,13 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, EmailStr, field_validator
-from typing import Optional
+import re
 import uuid
-import re
-import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from typing import Optional, List
+
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr, field_validator
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 app = FastAPI(
     title="User Management + Text Analysis API",
@@ -15,6 +18,32 @@ app = FastAPI(
 @app.get("/")
 def root():
     return {"status": "online", "message": "User Management & Text Analysis API is running."}
+
+# ─────────────────────────────────────────────
+#  Security Configuration
+# ─────────────────────────────────────────────
+SECRET_KEY = "your-super-secret-key-change-this-in-production"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
 # ─────────────────────────────────────────────
 #  In-Memory Storage
@@ -28,6 +57,14 @@ analyses_db: dict = {}       # { analysis_id: {...analysis data...} }
 class UserCreate(BaseModel):
     name: str
     email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
 
 class UserResponse(BaseModel):
     id: str
@@ -56,6 +93,35 @@ class TextAnalysisResponse(BaseModel):
     special_character_count: int
     analyzed_at: str
 
+# ─────────────────────────────────────────────
+#  Authentication Dependency
+# ─────────────────────────────────────────────
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+        token_data = TokenData(email=email)
+    except JWTError:
+        raise credentials_exception
+    
+    # Find user in DB
+    user = None
+    for u in users_db.values():
+        if u["email"] == token_data.email:
+            user = u
+            break
+            
+    if user is None:
+        raise credentials_exception
+    return user
+
 
 # ─────────────────────────────────────────────
 #  Helper: Text Analysis Logic
@@ -69,6 +135,32 @@ def analyze_text(text: str) -> dict:
         "uppercase_count": uppercase_count,
         "special_character_count": special_character_count,
     }
+
+
+# ─────────────────────────────────────────────
+#  Auth Endpoints
+# ─────────────────────────────────────────────
+
+@app.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = None
+    for u in users_db.values():
+        if u["email"] == form_data.username:
+            user = u
+            break
+            
+    if not user or not verify_password(form_data.password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user["email"]}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 # ─────────────────────────────────────────────
@@ -91,6 +183,7 @@ def create_user(payload: UserCreate):
         "id": user_id,
         "name": payload.name,
         "email": payload.email,
+        "hashed_password": get_password_hash(payload.password),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "analysis_ids": []   # track all analyses for this user
     }
@@ -99,7 +192,12 @@ def create_user(payload: UserCreate):
 
 
 @app.get("/users", response_model=list[UserResponse], status_code=200)
-def get_all_users(limit: int = 10, offset: int = 0, sort: str = "asc"):
+def get_all_users(
+    limit: int = 10, 
+    offset: int = 0, 
+    sort: str = "asc", 
+    current_user: dict = Depends(get_current_user)
+):
     """
     Return all users with pagination and sorting.
     - limit: number of records to return (default 10, must be > 0)
@@ -123,7 +221,7 @@ def get_all_users(limit: int = 10, offset: int = 0, sort: str = "asc"):
 
 
 @app.get("/users/{user_id}", response_model=UserResponse, status_code=200)
-def get_user(user_id: str):
+def get_user(user_id: str, current_user: dict = Depends(get_current_user)):
     """Return a single user by ID."""
     user = users_db.get(user_id)
     if not user:
@@ -132,7 +230,7 @@ def get_user(user_id: str):
 
 
 @app.delete("/users/{user_id}", status_code=200)
-def delete_user(user_id: str):
+def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a user and all their associated analyses."""
     user = users_db.pop(user_id, None)
     if not user:
@@ -150,7 +248,11 @@ def delete_user(user_id: str):
 # ─────────────────────────────────────────────
 
 @app.post("/users/{user_id}/analyze", response_model=TextAnalysisResponse, status_code=201)
-def analyze_user_text(user_id: str, payload: TextAnalysisRequest):
+def analyze_user_text(
+    user_id: str, 
+    payload: TextAnalysisRequest, 
+    current_user: dict = Depends(get_current_user)
+):
     """
     Perform text analysis for a specific user.
     Returns word count, uppercase character count, and special character count.
@@ -184,7 +286,8 @@ def get_user_analyses(
     limit: int = 10, 
     offset: int = 0, 
     sort: str = "asc", 
-    min_words: Optional[int] = None
+    min_words: Optional[int] = None,
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Return all text analyses for a specific user with filtering, sorting, and pagination.
