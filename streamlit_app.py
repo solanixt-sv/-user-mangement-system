@@ -29,116 +29,107 @@ if "backend_started" not in st.session_state:
 
 # --- UI Setup ---
 st.set_page_config(
-    page_title="UserScope Dark | Intelligence Platform",
-    page_icon="🌌",
+    page_title="UserScope SaaS | Intelligence Control",
+    page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed", # Professional SaaS usually hides sidebar initially
 )
 
-# Premium Midnight Dark Theme CSS
+# Professional SaaS Dark Theme CSS
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    --primary: #818cf8;
-    --primary-glow: rgba(129, 140, 248, 0.2);
-    --bg-dark: #0f172a;
-    --card-dark: #1e293b;
-    --border-dark: #334155;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg: #0b0e14;
+    --card-bg: #151921;
+    --card-hover: #1c222d;
+    --border: #262c36;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
 }
 
-/* Base Styles */
-.stApp {
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
-}
-
-* { font-family: 'Inter', sans-serif; }
-h1, h2, h3, h4 { color: var(--text-primary); font-family: 'Outfit', sans-serif; }
+/* Zero Margin & Global Styles */
+.main { background-color: var(--bg); color: var(--text); }
+* { font-family: 'Plus Jakarta Sans', sans-serif; }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-dark); }
-::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 10px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
-/* Dashboard Cards */
-.card {
-    background: var(--card-dark);
-    border: 1px solid var(--border-dark);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 0 20px var(--primary-glow);
-    transform: translateY(-2px);
-}
+/* Remove default headers */
+header { visibility: hidden !important; }
+footer { visibility: hidden !important; }
+[data-testid="stSidebar"] { display: none !important; }
 
-/* Header Banner */
-.header-banner {
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-    border: 1px solid var(--border-dark);
-    padding: 2.5rem;
-    border-radius: 20px;
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-/* Sidebar Styling */
-[data-testid="stSidebar"] {
-    background-color: #020617 !important;
-    border-right: 1px solid var(--border-dark);
-}
-[data-testid="stSidebar"] * { color: var(--text-primary) !important; }
-
-/* Inputs & Forms */
-.stTextInput input, .stTextArea textarea {
-    background-color: #0f172a !important;
-    color: white !important;
-    border: 1px solid var(--border-dark) !important;
-    border-radius: 10px !important;
-}
-
-/* Buttons */
-.stButton > button {
-    background-color: var(--primary) !important;
-    color: #0f172a !important;
-    border: none !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-    transition: all 0.2s ease !important;
-}
-.stButton > button:hover {
-    filter: brightness(1.1);
-    transform: scale(1.02);
-    box-shadow: 0 0 15px var(--primary-glow);
-}
-
-/* Status Pill */
-.status-pill {
-    display: inline-flex;
+/* Custom Top Navigation Bar */
+.top-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 64px;
+    background: rgba(11, 14, 20, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
     align-items: center;
-    padding: 6px 14px;
-    border-radius: 99px;
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
+    justify-content: space-between;
+    padding: 0 40px;
+    z-index: 999;
 }
-.dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite; }
+.logo { font-weight: 800; font-size: 20px; color: var(--primary); display:flex; align-items:center; gap:10px; }
+.nav-status { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; color: #10b981; border: 1px solid rgba(16,185,129,0.2); padding: 4px 12px; border-radius: 99px; background: rgba(16,185,129,0.05); }
+.pulse-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
 @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-/* Fix Sidebar Toggle visibility in dark mode */
-header[data-testid="stHeader"] { background: transparent !important; }
-[data-testid="stHeader"] svg { fill: var(--text-primary) !important; }
+/* Main Content Area */
+.content-wrapper { padding-top: 80px; max-width: 1400px; margin: 0 auto; }
 
-footer { visibility: hidden; }
+/* SaaS Card Grid */
+.saas-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+.saas-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5); }
+
+/* Buttons & Interactive Elements */
+.stButton > button {
+    background: var(--primary) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 8px 24px !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+}
+.stButton > button:hover { background: var(--primary-hover) !important; transform: scale(1.02); }
+
+.secondary-btn > .stButton > button {
+    background: transparent !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-muted) !important;
+}
+.secondary-btn > .stButton > button:hover { border-color: #ef4444 !important; color: #ef4444 !important; }
+
+/* Metrics */
+.metric-box { text-align: center; border-right: 1px solid var(--border); }
+.metric-box:last-child { border-right: none; }
+.m-val { font-size: 32px; font-weight: 800; color: var(--text); }
+.m-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+/* Modern Expander */
+.stExpander { background: var(--card-bg) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; border:none !important; }
+.stExpander summary { background: var(--card-bg) !important; padding: 12px !important; border-radius: 12px !important; }
+
+/* Intelligence Block */
+.intel-log { background: #0b0e14; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a5b4fc; }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -156,94 +147,119 @@ def api_request(method, endpoint, data=None):
 if 'selected_user' not in st.session_state:
     st.session_state.selected_user = None
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.markdown("<h2 style='letter-spacing:-1px'>🌌 UserScope</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#64748b; font-size:13px'>Midnight Intelligence Edition</p>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    with st.expander("✨ Add New Profile", expanded=True):
-        with st.form("dark_form", clear_on_submit=True):
-            n = st.text_input("Full Name")
-            e = st.text_input("Email")
-            if st.form_submit_button("Register Account", use_container_width=True):
-                if n and e:
-                    if api_request("POST", "/users", {"name": n, "email": e}):
-                        st.success("Synchronized")
-                        st.rerun()
-
-    st.markdown("---")
-    is_online = is_port_in_use(8000)
-    if is_online:
-        st.markdown('<div class="status-pill"><div class="dot"></div> Engine Live</div>', unsafe_allow_html=True)
-    else:
-        st.error("Engine Offline")
-
-# --- MAIN DASHBOARD ---
-st.markdown("""
-<div class="header-banner">
-    <h1 style='color:white; margin:0; font-size: 2.5rem'>Intelligence Control</h1>
-    <p style='color: var(--text-secondary); margin-top: 10px'>Sophisticated user analytics and narrative ingestion.</p>
+# --- TOP NAVIGATION ---
+is_online = is_port_in_use(8000)
+st.markdown(f"""
+<div class="top-nav">
+    <div class="logo">⚡ UserScope <span style='font-weight:400; color:var(--text-muted); font-size:14px; opacity:0.5'>/ SaaS Intelligence</span></div>
+    <div class="nav-status">
+        <div class="pulse-dot"></div> {'Instance: Running' if is_online else 'Instance: Offline'}
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-l, r = st.columns([1, 2], gap="large")
+# --- CONTENT WRAPPER ---
+st.markdown("<div class='content-wrapper'>", unsafe_allow_html=True)
 
-with l:
-    st.markdown("### 💠 Identities")
+# Hero Section
+st.markdown("<div style='margin-bottom: 40px'>", unsafe_allow_html=True)
+c1, c2 = st.columns([2, 1])
+with c1:
+    st.markdown("<h1 style='margin:0'>Identity Dashboard</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='color:var(--text-muted); font-size:16px'>Manage real-time user metrics and execute narrative intelligence algorithms.</p>", unsafe_allow_html=True)
+with c2:
+    with st.popover("➕ Add New Identity", use_container_width=True):
+        st.markdown("### Register Account")
+        n = st.text_input("Display Name", placeholder="e.g. John Doe")
+        e = st.text_input("Account Email", placeholder="john@example.com")
+        if st.button("Authorize & Sync", use_container_width=True):
+            if n and e:
+                if api_request("POST", "/users", {"name": n, "email": e}):
+                    st.toast("Sync Success")
+                    st.rerun()
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+col_dir, col_intel = st.columns([1, 2], gap="large")
+
+# 👥 Identity Directory
+with col_dir:
+    st.markdown("<h4 style='color:var(--text-muted); margin-bottom: 20px'>ACTIVE DIRECTORY</h4>", unsafe_allow_html=True)
     users = api_request("GET", "/users")
     if users:
         for u in users:
             is_sel = st.session_state.selected_user and st.session_state.selected_user['id'] == u['id']
-            card_border = "border: 1.5px solid var(--primary);" if is_sel else ""
+            card_border = f"border-color: {st.get_option('theme.primaryColor') if is_sel else 'var(--primary)'}" if is_sel else ""
             st.markdown(f"""
-            <div class="card" style="{card_border} padding: 1rem">
-                <h4 style='margin:0'>{u['name']}</h4>
-                <p style='color:var(--text-secondary); font-size:12px; margin:0'>{u['email']}</p>
+            <div class="saas-card" style='padding: 18px; {card_border}'>
+                <div style='display:flex; align-items:center; gap:15px'>
+                    <div style='width:36px; height:36px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px'>{u['name'][0].upper()}</div>
+                    <div style='flex:1'>
+                        <div style='font-weight:700; font-size:15px'>{u['name']}</div>
+                        <div style='color:var(--text-muted); font-size:12px'>{u['email']}</div>
+                    </div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
-            c1, c2 = st.columns([2, 1])
+            c1, c2 = st.columns([3, 1])
             with c1:
-                if st.button("Initialize", key=f"v_{u['id']}", use_container_width=True):
+                if st.button("Manage Intelligence", key=f"v_{u['id']}", use_container_width=True):
                     st.session_state.selected_user = u
                     st.rerun()
             with c2:
-                if st.button("Purge", key=f"d_{u['id']}", use_container_width=True):
+                st.markdown("<div class='secondary-btn'>", unsafe_allow_html=True)
+                if st.button("×", key=f"d_{u['id']}", use_container_width=True):
                     api_request("DELETE", f"/users/{u['id']}")
                     if is_sel: st.session_state.selected_user = None
                     st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
     else:
-        st.info("System memory is empty.")
+        st.markdown("<div class='saas-card' style='text-align:center; opacity:0.5'>Directory is empty</div>", unsafe_allow_html=True)
 
-with r:
+# 🔬 Intelligence Board
+with col_intel:
     sel = st.session_state.selected_user
     if sel:
-        st.markdown(f"### 🧪 Subject: {sel['name']}")
+        st.markdown(f"<h4 style='color:var(--text-muted); margin-bottom: 20px'>OPERATIONAL HUB: {sel['name'].upper()}</h4>", unsafe_allow_html=True)
         
+        # Performance Hub Card
+        st.markdown("<div class='saas-card'>", unsafe_allow_html=True)
         analyses = api_request("GET", f"/users/{sel['id']}/analyses")
-        m1, m2 = st.columns(2)
-        with m1:
-            st.markdown(f"<div class='card' style='text-align:center'><p style='font-size:10px; color:var(--text-secondary)'>ANALYSES</p><h1 style='margin:0'>{len(analyses) if analyses else 0}</h1></div>", unsafe_allow_html=True)
-        with m2:
-            st.markdown(f"<div class='card' style='text-align:center'><p style='font-size:10px; color:var(--text-secondary)'>HASH</p><h1 style='margin:0; font-family:monospace; font-size:1.5rem'>{sel['id'][:8].upper()}</h1></div>", unsafe_allow_html=True)
+        m1, m2, m3 = st.columns(3)
+        with m1: st.markdown(f"<div class='metric-box'><div class='m-val'>{len(analyses) if analyses else 0}</div><div class='m-label'>Analyses</div></div>", unsafe_allow_html=True)
+        with m2: st.markdown(f"<div class='metric-box'><div class='m-val'>ACTIVE</div><div class='m-label'>Status</div></div>", unsafe_allow_html=True)
+        with m3: st.markdown(f"<div class='metric-box'><div class='m-val'>{sel['id'][:6].upper()}</div><div class='m-label'>Auth HASH</div></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        t_input = st.text_area("Narrative Ingestion", placeholder="Enter raw data for processing...", height=150)
-        if st.button("Process Intelligence", use_container_width=True):
+        # Algorithm Input
+        st.markdown("<div class='saas-card'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='margin-top:0'>Data Ingestion</h4>", unsafe_allow_html=True)
+        t_input = st.text_area("", placeholder="Paste raw narrative text here for quantitative intelligence analysis...", height=120, label_visibility="collapsed")
+        if st.button("Execute Algorithm", use_container_width=True):
             if t_input.strip():
                 if api_request("POST", f"/users/{sel['id']}/analyze", {"text": t_input}):
-                    st.toast("Data Processed ✨")
+                    st.toast("Intelligence Generated")
                     st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
+        # Operational History
         if analyses:
+            st.markdown("<h4 style='margin: 40px 0 20px'>LOG HISTORY</h4>", unsafe_allow_html=True)
             for a in reversed(analyses):
-                with st.expander(f"Data Log | {a['analyzed_at'][:16].replace('T', ' ')}"):
-                    sc1, sc2, sc3 = st.columns(3)
-                    sc1.metric("Words", a['word_count'])
-                    sc2.metric("Caps", a['uppercase_count'])
-                    sc3.metric("Symbols", a['special_character_count'])
-                    st.markdown(f"<div style='background:#111827; padding:15px; border-radius:10px; border:1px solid #334155; font-family:monospace; font-size:13px'>{a['text']}</div>", unsafe_allow_html=True)
+                with st.expander(f"Operation ID: {a['analysis_id'][:8].upper()} — {a['analyzed_at'][:16].replace('T', ' ')}"):
+                    mc1, mc2, mc3 = st.columns(3)
+                    mc1.metric("W-Count", a['word_count'])
+                    mc2.metric("U-Count", a['uppercase_count'])
+                    mc3.metric("S-Count", a['special_character_count'])
+                    st.markdown(f"<div class='intel-log'>{a['text']}</div>", unsafe_allow_html=True)
     else:
-        st.markdown("<div style='text-align:center; padding: 4rem; opacity: 0.4'><h2>◈ NO SELECTION</h2><p>Select a subject to retrieve intelligence logs.</p></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class="saas-card" style="text-align:center; padding: 120px 20px;">
+            <div style='font-size: 48px; margin-bottom: 20px'>📡</div>
+            <h3 style='margin:0'>Awaiting Selection</h3>
+            <p style='color:var(--text-muted)'>Please select an identity from the directory to initialize the intelligence pipeline.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True) # Close content-wrapper
