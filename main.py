@@ -99,9 +99,27 @@ def create_user(payload: UserCreate):
 
 
 @app.get("/users", response_model=list[UserResponse], status_code=200)
-def get_all_users():
-    """Return all users."""
-    return [UserResponse(**u) for u in users_db.values()]
+def get_all_users(limit: int = 10, offset: int = 0, sort: str = "asc"):
+    """
+    Return all users with pagination and sorting.
+    - limit: number of records to return (default 10, must be > 0)
+    - offset: starting index (default 0, must be >= 0)
+    - sort: sort order by user_id (asc or desc)
+    """
+    # Validation
+    if limit <= 0:
+        raise HTTPException(status_code=400, detail="limit must be a positive integer.")
+    if offset < 0:
+        raise HTTPException(status_code=400, detail="offset must be zero or a positive integer.")
+    if sort not in ["asc", "desc"]:
+        raise HTTPException(status_code=400, detail="sort must be either 'asc' or 'desc'.")
+
+    # Fetch and Sort
+    users = list(users_db.values())
+    users.sort(key=lambda x: x["id"], reverse=(sort == "desc"))
+
+    # Paginate
+    return [UserResponse(**u) for u in users[offset : offset + limit]]
 
 
 @app.get("/users/{user_id}", response_model=UserResponse, status_code=200)
@@ -161,15 +179,49 @@ def analyze_user_text(user_id: str, payload: TextAnalysisRequest):
 
 
 @app.get("/users/{user_id}/analyses", response_model=list[TextAnalysisResponse], status_code=200)
-def get_user_analyses(user_id: str):
-    """Return all text analyses performed for a specific user."""
+def get_user_analyses(
+    user_id: str, 
+    limit: int = 10, 
+    offset: int = 0, 
+    sort: str = "asc", 
+    min_words: Optional[int] = None
+):
+    """
+    Return all text analyses for a specific user with filtering, sorting, and pagination.
+    - min_words: filter analyses by minimum word count (must be >= 0)
+    - limit: number of records to return (default 10, must be > 0)
+    - offset: starting index (default 0, must be >= 0)
+    - sort: sort order by analysis_id (asc or desc)
+    """
     user = users_db.get(user_id)
     if not user:
         raise HTTPException(status_code=404, detail=f"User with ID '{user_id}' not found.")
 
-    result = [
-        TextAnalysisResponse(**analyses_db[aid])
-        for aid in user.get("analysis_ids", [])
+    # Validation
+    if limit <= 0:
+        raise HTTPException(status_code=400, detail="limit must be a positive integer.")
+    if offset < 0:
+        raise HTTPException(status_code=400, detail="offset must be zero or a positive integer.")
+    if sort not in ["asc", "desc"]:
+        raise HTTPException(status_code=400, detail="sort must be either 'asc' or 'desc'.")
+    if min_words is not None and min_words < 0:
+        raise HTTPException(status_code=400, detail="min_words must be zero or a positive integer.")
+
+    # Fetch analyses
+    analyses = [
+        analyses_db[aid] 
+        for aid in user.get("analysis_ids", []) 
         if aid in analyses_db
     ]
-    return result
+
+    # Filtering (Applied before pagination)
+    if min_words is not None:
+        analyses = [a for a in analyses if a["word_count"] >= min_words]
+
+    # Sorting (By analysis_id)
+    analyses.sort(key=lambda x: x["analysis_id"], reverse=(sort == "desc"))
+
+    # Pagination
+    paginated_results = analyses[offset : offset + limit]
+
+    return [TextAnalysisResponse(**a) for a in paginated_results]
