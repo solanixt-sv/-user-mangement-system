@@ -148,7 +148,16 @@ h1, h2, h3 {
     margin-bottom: 0.75rem;
 }
 
-header { visibility: hidden; }
+/* Better Header Handling - Hide Deploy/Menu but keep Sidebar Toggle */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+[data-testid="stHeader"] .stDeployButton,
+[data-testid="stHeader"] #MainMenu {
+    display: none !important;
+}
+
 footer { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
